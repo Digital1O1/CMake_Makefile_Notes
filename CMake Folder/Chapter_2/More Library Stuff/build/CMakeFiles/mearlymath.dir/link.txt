@@ -1,0 +1,2 @@
+C:/MinGW/bin/ar.exe qc libmearlymath.a CMakeFiles/mearlymath.dir/src/adder.cpp.obj
+C:/MinGW/bin/ranlib.exe libmearlymath.a

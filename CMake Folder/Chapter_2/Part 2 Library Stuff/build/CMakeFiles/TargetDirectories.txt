@@ -1,0 +1,8 @@
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/mearlymath.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/testing_math.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/edit_cache.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/rebuild_cache.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/list_install_components.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/install.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/install/local.dir
+E:/Coding Folder/VsCode Notes/CMake Notes/Chapter 2/Part 2 Library Stuff/build/CMakeFiles/install/strip.dir
