@@ -1,88 +1,118 @@
-# Makefile Notes
+# [Makefile tutorial](https://makefiletutorial.com/)
 
-## The C++ program
-```cpp
-#include <iostream>
+## Makefiles **MUST** be indented using `TABS` not spaces or it'll fail 
 
-int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
-}
+## Makefile Syntax
+- Consists of a set of `rules` that look like 
+
+```Makefile
+targets: prerequisites
+	command
+	command
+	command
 ```
 
-## The Makefile used to compile the program
+- Breakdown of syntax above
+  - Targets
+    - File names separated by spaces
+    - Typically there's only one per rule
+  - Commands
+    - Series of steps used to make the target(s)
+    - Need to start with tab character, not spaces
+  - Prerequisites
+    - File names separated by spaces 
+    - These files need to exist `before` the commands for the target to are ran
+    - Are also called `dependences`
+
+## The essence of Make
+
 ```Makefile
-##############################################################################################################
-# Summary : Compiler flags
-CPP := g++
-# 'CPP' --> variable assigned to 'g++'
-# Variables in Makefile stored in reverse compared to C++
-# Example : Variable := flag
-##############################################################################################################
-# Summary : COMPILER_FLAGS : variable that stores compiler flags
-# -std=c++11 : use C++11 standard
-# -Wall : enable most of the compiler's warning messages
-COMPILER_FLAGS := -std=c++11 -Wall
-##############################################################################################################
-# Summary : Source files
-SOURCE_FILES := main.cpp
-# Defines the variable SOURCE_FILES
-# Stores list of source files, which in this case is just main.cpp
-##############################################################################################################
-# Summary : # Object files
-OBJECT_FILES := $(SOURCE_FILES:.cpp=.o)
-# OBJECT_FILES := $(SOURCE_FILES:.cpp=.o) --> A feature called 'Pattern substitution' in Makefiles
-# Syntax for pattern subsitutions         --> $(PROGRAM_EXECUTABLE): $(OBJECT_FILES): 
-# Breaking the variables down
-# OBJECT_FILES                            --> Variable that's storing everything
-# $(SOURCE_FILES)                         --> Variable that holds a list of source files. In this case, main.cpp
-# :.cpp=.o                                --> Pattern substitution opeartion applied to each element in $(SOURCE_FILES) 
-#                                             replaces each instance of .cpp in  $(SOURCE_FILES) with '.o' file. 
-#                                             It'll contain main.cpp and result in main.o
-##############################################################################################################
-# Summary :  Target application
-# Holds name of final executable
-PROGRAM_EXECUTABLE := myprogram
-##############################################################################################################
-# Summary : Rule to compile each source file into an object file
-%.o: %.cpp
-	@echo "Compiling: $<"
-	$(CPP) $(COMPILER_FLAGS) -c $< -o $@
-# The target pattern ('%.o:') specifies the pattern for the target file, which is the '%' which matches any sequence of characters, followed by '.o'
-# The colon (':') seperates the target pattern from the prerequisites 
-# Prerequisite pattern ('%.cpp') specifies which pattern to look for 
-# The second line : target-prerequisite declaration
+# Hello world example
+hello:
+	echo "Hello, World"
+	echo "This line will print if the file hello does not exist."
+```
 
-# The actual command(s)
-# @echo "Compiling:" prints message to consol indicating which source file is being compiled
-# $< : Represents first prerequisite of the rule; which in this case is the source file being compiled
-# -c : Tells compiler to generate object files; .o files, from source files w/o linking
-# $< : Is an automatic variable in Make. Represents first prerequisite of the rule which in this case is the source file (%.cpp) that's being compiled
-# %@ : Another automatic avariable in Make that represents the target of the rule, which in this case is the object file that's generated
-##############################################################################################################
-# Summary : Rule to link the object files into the final application
-$(PROGRAM_EXECUTABLE): $(OBJECT_FILES)
-	@echo "Linking: $@"
-	$(CPP) -o $@ $(OBJECT_FILES) $(COMPILER_FLAGS)
+- Breakdown of example
+  - Have one target called `hello`
+  - This target has two commands 
+    - The echo(s)
+  - And no prerequisites
 
-# $(PROGRAM_EXECUTABLE): $(OBJECT_FILES):      --> This is the target-prerequisite declaration. 
-# $(PROGRAM_EXECUTABLE) is the target pattern. --> represents the program executable that we want to build.
-# $(OBJECT_FILES)                              --> The prerequisite pattern. 
-#                                                  It represents the list of object files required to build the program executable.
-# The first line : pretty much states the program executable depends on the object file listed in $(OBJECT_FILES). 
-# If any object files change, the program executable needs to be rebuilt
+### To run `make hello`
+- The `hello` file can't exist
+- If that's the case the commands will run
+- If the file does exist, no commands will run
+- These statements are in reference about `hello` being both a target and a file
+  - Since the two are directly tied together
+  - When a target is ran; specifically the commands of a target
+    - The commands will create a file with the same `name` as the target
+    - In this case:
+      - `hello` target DOESN'T create the `hello` file
 
-# @echo "Linking: $@":
-# Prints message to console indicating linking process is taking place
-# @ --> suppressses printing of the command itself
-#       only  "Linking: $(PROGRAM_EXECUTABLE)" is displayed
+## Refer to `Hello World Makefile` for a basic example
 
-# $@ :
-# Automatic variable that represents the target of the rule
-# Which in this case is the program executable
-##############################################################################################################
-# Rule to clean up generated files
-clean:
-	@echo "Cleaning up..."
-	rm -rf $(PROGRAM_EXECUTABLE) $(OBJECT_FILES)
+## Typical Makefile stuff
+
+### Compiling single C file
+
+```c
+// blah.c
+int main() { return 0; }
+```
+### The Makefile that's needed
+- Running `make` on it's own
+- Since no target i ssupplied as an argument to the make command --> The first target ; blah, is ran
+  - If ran for a second time, you'll get
+    - `main.c is up to date`
+    - If you try to modify main.c and run make again `nothing gets recompiled`
+    - Must add prerequisite
+- With prerequisite the following happens
+  - First target selected since it's the first target is the default target
+  - Has prerequisite of main.c
+  - Make decides if it should run `main` target
+    - It'll only run 
+      - If `main` doesn't exist 
+      - `main.c` is newer than `main`
+      - Filesystem timestamps are used as proxies to determine if a file has changed or not
+```Makefile
+# No prerequsite
+blah:
+	cc blah.c -o blah
+
+# Added prerequisite 
+main: main.c
+    cc main.c -o main
+
+# CPP 'version'
+main: main.cpp
+    g++ main.cpp -o main
+
+# Basic Makefile Syntax Reminder
+targets: prerequisites
+	command
+	command
+	command
+```
+## More examples
+
+## Breakdown of example below
+- Make selects target `blah`
+- Make selects the target blah, because the first target is the default target
+- blah requires blah.o, so make searches for the blah.o target
+- blah.o requires blah.c, so make searches for the blah.c target
+- blah.c has no dependencies, so the echo command is run
+- The cc -c command is then run, because all of the blah.o dependencies are finished
+- The top cc command is run, because all the blah dependencies are finished
+- That's it: blah is a compiled c program
+```makefile
+blah: blah.o
+	cc blah.o -o blah # Runs third
+
+blah.o: blah.c
+	cc -c blah.c -o blah.o # Runs second
+
+# Typically blah.c would already exist, but I want to limit any additional required files
+blah.c:
+	echo "int main() { return 0; }" > blah.c # Runs first
 ```
