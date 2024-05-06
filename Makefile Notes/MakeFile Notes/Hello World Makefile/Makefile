@@ -3,6 +3,7 @@
 
 # First example that doesn't recompile if any changes are made
 #main:
+# This is the first example
 #	cc main.c -o testing
 
 # Seocnd example that recompiles if changes are made
