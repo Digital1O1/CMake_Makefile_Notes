@@ -49,7 +49,7 @@ hello:
 
 ### To run `make hello`
 ### When running 'make hello'
-- As long as the file 'hello' doesn't exist, the commands will run
+- As long as the file 'hello' doesn't exist, the `commands will run`
 - If the 'hello' file does exist, the commands will NOT run
 - In this context, `hello` is both a `target` and a `file`
   - Since the two are directly tied together
@@ -196,6 +196,7 @@ targets: prerequisites
 # Variable example
 
 files := file1 file2
+# When 'some_files' is built it echos the values of 'files' variable then touches 'some_file'
 some_file: $(files)
 	echo "Look at this variable: " $(files)
 	touch some_file
@@ -211,7 +212,7 @@ clean:
 
 ## Example using single/double quotes
 - Single/double quotes don't mean anything in Make
-- They're just characters assined to a variable
+- They're just characters assigned to a variable
 ```Makefile
 a := one two   # a is set to the string "one two"
 b := 'one two' # Not recommended. b is set to the string "'one two'"
@@ -274,4 +275,156 @@ f1.o f2.o:
 #	 echo f1.o
 # f2.o:
 #	 echo f2.o
+```
+
+---
+
+<br>
+
+# Automatic Variable and Wildcards
+
+## The Wildcard
+- Both `*` and `%` are wildcards but they mean very different things 
+
+### `*`
+- Searches filesystem for matching `file names`
+  - Recommended to wrap the `wildcard funcntion`
+    - Example of wrapping the wildcard function : `thing_right := $(wildcard *.o)`
+  - See below for example
+	```Makefile
+	# Remember
+	# Makefile Syntax
+	targets: prerequisites
+		command
+		command
+		command
+	
+	# First example
+	# Print out file information about every .c file
+	print: $(wildcard *.c)
+	ls -la  $?
+
+
+	# Second example 
+	thing_wrong := *.o # Don't do this! '*' will not get expanded
+	thing_right := $(wildcard *.o)
+
+	all: one two three four
+
+	# Fails, because $(thing_wrong) is the string "*.o"
+	one: $(thing_wrong)
+
+	# Stays as *.o if there are no files that match this pattern :(
+	two: *.o 
+
+	# Works as you would expect! In this case, it does nothing.
+	three: $(thing_right)
+
+	# Same as rule three
+	four: $(wildcard *.o)
+	```
+
+### In the first example
+- `*` can be used in:
+  - The target
+  - Prerequisite
+  - In the wildcard function
+- Don't use `*` in the `variable definitions`
+- Also keep in mind if `*` matches no files 
+  - It's left as it is 
+  - Not unless it's running in the wildcard function
+
+### `%` Wildcard
+- Super useful but confusing due to the variety of situations it can be used in
+  - When used in : 
+    - `Matching mode` : it matches one or more characters in a string
+      - This match is called `The stem`
+    - `Replacing mode` : it takes the `stem` that was matched and `replaces it with a string`
+- Most often used in 
+  - `Rule definitions`	
+  - Some specific functions 
+
+### Sections on examples of it being used
+#### 1) [Static Pattern Rules](https://makefiletutorial.com/#static-pattern-rules)
+#### 2) [Pattern Rules](https://makefiletutorial.com/#pattern-rules)
+#### 3) [String Substitution](https://makefiletutorial.com/#string-substitution)
+#### 4) [The vpath Directive](https://makefiletutorial.com/#the-vpath-directive)
+
+
+### Another wildcard example
+
+```Makefile
+# Define variables
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := bin
+CC := gcc
+CFLAGS := -Wall -Wextra -g
+
+# Define sources and objects
+SRCS := $(wildcard $(SRC_DIR)/*.c)
+OBJS := $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+
+# Define the target executable
+TARGET := $(BIN_DIR)/myprogram
+
+# Default target
+all: $(TARGET)
+
+# Compile source files into object files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link object files into the target executable
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) $^ -o $@
+
+# Clean rule to remove object files and the executable
+clean:
+	rm -rf $(OBJ_DIR)/*.o $(TARGET)
+
+
+```
+## Usage:
+
+- Save this as Makefile in your project directory.
+- Place your .c files in the src directory.
+- Run make in your terminal to compile source files and generate the executable.
+- Run make clean to remove generated files.
+
+## Explanation:
+- SRC_DIR, OBJ_DIR, and BIN_DIR hold directory paths.
+- CC is the compiler command.
+- CFLAGS holds compiler flags.
+- SRCS finds all .c files in src directory.
+- OBJS converts each .c file to a .o file in obj directory.
+- TARGET specifies the target executable.
+- The all target depends on $(TARGET).
+- The rule $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c compiles each .c file.
+- The rule $(TARGET): $(OBJS) links object files into the executable.
+  - The clean rule removes object files and the executable.
+
+## Automatic variables
+- Reference towards other automatic variables : https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
+```Makefile
+hey: one two
+	# Outputs "hey", since this is the target name
+	echo $@
+
+	# Outputs all prerequisites newer than the target
+	echo $?
+
+	# Outputs all prerequisites
+	echo $^
+
+	touch hey
+
+one:
+	touch one
+
+two:
+	touch two
+
+clean:
+	rm -f hey one two
 ```
