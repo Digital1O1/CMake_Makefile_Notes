@@ -350,6 +350,102 @@ f1.o f2.o:
 #### 3) [String Substitution](https://makefiletutorial.com/#string-substitution)
 #### 4) [The vpath Directive](https://makefiletutorial.com/#the-vpath-directive)
 
+# Example Makefile Using the `%` Wildcard
+
+## Project Structure
+
+```
+project/
+
+├── Makefile
+├── src/
+│   ├── main.c
+│   ├── foo.c
+│   └── bar.c
+└── include/
+    ├── main.h
+    ├── foo.h
+    └── bar.h
+```
+
+## Makefile Example Using `%`
+
+### Static Pattern Rules/Syntax 
+
+```Makefile
+targets...: target-pattern: prereq-patterns ...
+   commands
+```
+
+### To summarize the syntax rules
+- The given `target` matched by the `target-pattern `
+  - Via the `%` wildcard
+  - Whatever is matched is the `stem`
+    - The `stem` is then substitued into the `prereq-pattern` to generate the target's prereqs
+
+### Good ole manual way
+
+```Makefile
+# Defines variable 'objects' that has a list of object files
+objects = foo.o bar.o all.o
+
+# The `all` target depends on `$(objects)` file
+# Meaning that `make all` will build foo.o, bar.o, and all.o.
+all: $(objects)
+
+# These files compile via implicit rules
+foo.o: foo.c
+bar.o: bar.c
+all.o: all.c
+
+all.c:
+	echo "int main() { return 0; }" > all.c
+
+%.c:
+	touch $@
+
+clean:
+	rm -f *.c *.o all
+```
+
+### Refresher : Static Pattern Syntax
+```Makefile
+targets...: target-pattern: prereq-patterns ...
+   commands
+```
+
+### More efficient way to use static pattern rule
+
+```Makefile
+# Defines variable 'objects' that has a list of object files
+objects = foo.o bar.o all.o
+
+# The `all` target depends on `$(objects)` file
+# Meaning that `make all` will build foo.o, bar.o, and all.o.
+all: $(objects)
+
+# These files compile via implicit rules
+# Syntax - targets ...: target-pattern: prereq-patterns ...
+# In the case of the first target, foo.o, the target-pattern matches foo.o and sets the "stem" to be "foo".
+# It then replaces the '%' in prereq-patterns with that stem
+
+# Pattern rule that tells Make how to build object files from the corresponding source files
+# $(objects) : specifies target that this rule applies to, which are 'foo.o' 'bar.o' and 'all.o'
+# %.o is the target pattern, the '%' wildcard matches any stem (example foo bar all)
+# %.c is the PREREQUISITE pattern, the '%' in this pattern is replaced by the stem matched in the target pattern
+# This rule pretty much tells Make how to convert a `.c` file into a `.o` file
+$(objects): %.o: %.c
+
+all.c:
+	echo "int main() { return 0; }" > all.c
+
+# Makes an empty source file 
+%.c:
+	touch $@
+
+clean:
+	rm -f *.c *.o all
+```
 
 ### Another wildcard example
 
@@ -382,8 +478,6 @@ $(TARGET): $(OBJS)
 # Clean rule to remove object files and the executable
 clean:
 	rm -rf $(OBJ_DIR)/*.o $(TARGET)
-
-
 ```
 ## Usage:
 
@@ -406,6 +500,7 @@ clean:
 
 ## Automatic variables
 - Reference towards other automatic variables : https://www.gnu.org/software/make/manual/html_node/Automatic-Variables.html
+
 ```Makefile
 hey: one two
 	# Outputs "hey", since this is the target name
@@ -427,4 +522,78 @@ two:
 
 clean:
 	rm -f hey one two
+```
+
+# Fancy rules
+
+## Implicit rules listed out
+### Compiling a C program : ``$(CC) -c $(CPPFLAGS) $(CFLAGS) $^ -o $@``
+- `n.o` : Object files generated fro compiling the `source file` `n.c`
+  - The `.o` sifgnifies its' an `object file` containing machine code
+- `n.c` : Represents the `source file` `n.c` that's compiled to produce the `object file` `n.o`
+  - The `.c` signifies it's a C source file
+- `n.o` is made with `n.c` with the command : `$(CC) -c $(CPPFLAGS) $(CFLAGS) $^ -o $@`
+
+### Compiling a C++ program : `$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $^ -o $@`
+
+### Linking single object file : `$(CC) $(LDFLAGS) $^ $(LOADLIBES) $(LDLIBS) -o $@`
+- `n` is automatically from `n.o` 
+
+### Important variables used by implicit rules
+- `CC`: Program for compiling C programs; `default cc`
+- `CXX`: Program for compiling C++ programs; `default g++`
+- `CFLAGS`: Extra flags to give to the `C compiler`
+- `CXXFLAGS`: Extra flags to give to the `C++ compiler`
+- `CPPFLAGS`: Extra flags to give to the `C preprocessor`
+- `LDFLAGS`: Extra flags to give to compilers when they are supposed to invoke the linker
+
+## Example of how to build C program w/o explicitly telling Make how to do the compiliation
+
+```Makefile
+CC = gcc # Flag for implicit rules
+CFLAGS = -g # Flag for implicit rules. Turn on debug info
+
+# Implicit rule #1: blah is built via the C linker implicit rule
+# Implicit rule #2: blah.o is built via the C compilation implicit rule, because blah.c exists
+blah: blah.o
+
+blah.c:
+	echo "int main() { return 0; }" > blah.c
+
+clean:
+	rm -f blah*
+```
+
+# Static Pattern Rules/Filters
+## Filter function
+- Can be used in `static pattern rules` to match the correct files
+- Here's the syntax for `static pattern rules` for reference sake
+
+	```Makefile
+	targets...: target-pattern: prereq-patterns ...
+	commands
+	```
+- In the following example below, the `.raw` and `.results` extensions were made up
+
+```Makefile
+obj_files = foo.result bar.o lose.o
+src_files = foo.raw bar.c lose.c
+
+all: $(obj_files)
+# Note: PHONY is important here. Without it, implicit rules will try to build the executable "all", since the prereqs are ".o" files.
+.PHONY: all 
+
+# Ex 1: .o files depend on .c files. Though we don't actually make the .o file.
+$(filter %.o,$(obj_files)): %.o: %.c
+	echo "target: $@ prereq: $<"
+
+# Ex 2: .result files depend on .raw files. Though we don't actually make the .result file.
+$(filter %.result,$(obj_files)): %.result: %.raw
+	echo "target: $@ prereq: $<" 
+
+%.c %.raw:
+	touch $@
+
+clean:
+	rm -f $(src_files)
 ```
